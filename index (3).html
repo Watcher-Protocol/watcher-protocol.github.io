@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WATCHER PROTOCOL — Governance Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&family=Crimson+Pro:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #06060c; color: #ddd; font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
+  .header { padding: 20px 32px 16px; border-bottom: 1px solid #151520; background: linear-gradient(180deg, #0a0a14, #06060c); }
+  .header-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .header h1 { font-family: 'Crimson Pro', serif; font-size: 26px; font-weight: 800; color: #fff; }
+  .header .tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #3b82f6; letter-spacing: 3px; font-weight: 700; margin-left: 10px; }
+  .header .sub { font-size: 11px; color: #555; font-weight: 300; margin-top: 2px; }
+  .stats { display: flex; gap: 16px; }
+  .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; text-align: center; }
+  .stat-label { font-family: 'JetBrains Mono', monospace; font-size: 7px; color: #444; letter-spacing: 2px; text-align: center; }
+  .role-bar { background: #0a0a14; border-bottom: 1px solid #151520; padding: 8px 32px; }
+  .role-bar-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .role-btn { background: #111118; border: 1px solid #222; border-radius: 4px; padding: 5px 12px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #666; transition: all 0.15s; }
+  .role-btn:hover { border-color: #3b82f6; color: #aaa; }
+  .role-btn.active { border-color: #3b82f6; color: #60a5fa; background: #0e1225; }
+  .role-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #444; letter-spacing: 2px; }
+  .role-desc { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #555; margin-left: auto; }
+  .main-body { max-width: 1200px; margin: 0 auto; display: flex; gap: 0; padding: 0 32px; }
+  .col-left { width: 260px; flex-shrink: 0; border-right: 1px solid #151520; padding: 20px 16px 20px 0; }
+  .col-mid { flex: 1; min-width: 0; padding: 20px 16px; border-right: 1px solid #151520; }
+  .col-right { width: 280px; flex-shrink: 0; padding: 20px 0 20px 16px; }
+  .section-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #444; letter-spacing: 2px; margin-bottom: 8px; }
+  .const-rule { background: #0a0a14; border: 1px solid #1a1a28; border-radius: 4px; padding: 8px 10px; margin-bottom: 4px; position: relative; padding-right: 60px; }
+  .const-rule .rule-name { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; margin-bottom: 3px; }
+  .const-rule .rule-desc { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #555; line-height: 1.4; }
+  .const-rule .rule-type { font-family: 'JetBrains Mono', monospace; font-size: 7px; letter-spacing: 1px; display: inline-block; margin-top: 4px; padding: 1px 5px; border-radius: 2px; }
+  .const-toggle { position: absolute; top: 8px; right: 8px; font-size: 8px; cursor: pointer; font-family: 'JetBrains Mono', monospace; padding: 2px 8px; border-radius: 2px; border: 1px solid #333; color: #666; transition: all 0.15s; }
+  .const-toggle:hover { border-color: #3b82f6; color: #aaa; }
+  .const-toggle.disabled { opacity: 0.3; cursor: not-allowed; }
+  .const-toggle.disabled:hover { border-color: #333; color: #666; }
+  .preset-btn { display: block; width: 100%; background: #0a0a14; border: 1px solid #1a1a28; border-radius: 4px; padding: 8px 10px; cursor: pointer; text-align: left; transition: all 0.15s; margin-bottom: 3px; }
+  .preset-btn:hover { border-color: #3b82f6; background: #0e0e1a; }
+  .preset-btn .name { font-size: 12px; color: #ccc; margin-bottom: 1px; }
+  .preset-btn .desc { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #555; }
+  .preset-btn.disabled { opacity: 0.3; cursor: not-allowed; }
+  .preset-btn.disabled:hover { border-color: #1a1a28; background: #0a0a14; }
+  textarea.claim-input { width: 100%; background: #0a0a12; border: 1px solid #1a1a28; border-radius: 4px; padding: 8px; color: #ddd; font-family: 'IBM Plex Sans', sans-serif; font-size: 11px; resize: vertical; outline: none; }
+  textarea.claim-input:focus { border-color: #3b82f6; }
+  input.tag-input { width: 100%; background: #0a0a12; border: 1px solid #1a1a28; border-radius: 4px; padding: 6px 8px; color: #ddd; font-family: 'JetBrains Mono', monospace; font-size: 9px; margin-top: 6px; outline: none; }
+  .ev-slot { background: #0a0a14; border: 1px solid #1a1a28; border-radius: 4px; padding: 8px; margin-bottom: 4px; }
+  .ev-slot-row { display: flex; align-items: center; gap: 5px; }
+  .ev-select { background: #0c0c16; border: 1px solid #222; border-radius: 3px; padding: 4px 6px; color: #ccc; font-family: 'JetBrains Mono', monospace; font-size: 9px; outline: none; cursor: pointer; flex: 1; }
+  .ev-strength { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #60a5fa; min-width: 28px; text-align: right; }
+  .ev-remove { background: none; border: 1px solid #2a1515; border-radius: 2px; color: #f87171; font-size: 9px; cursor: pointer; padding: 1px 5px; }
+  .ev-file-label { display: block; margin-top: 4px; padding: 4px 6px; background: #08080e; border: 1px dashed #222; border-radius: 3px; cursor: pointer; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #555; transition: all 0.15s; }
+  .ev-file-label:hover { border-color: #3b82f6; color: #3b82f6; }
+  .ev-file-label.has-file { border-color: #22c55e44; color: #4ade80; border-style: solid; }
+  .ev-hash { font-family: 'JetBrains Mono', monospace; font-size: 7px; color: #22c55e; margin-top: 3px; word-break: break-all; }
+  .ev-file-info { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #888; margin-top: 2px; }
+  .btn-add-ev { width: 100%; margin-top: 3px; margin-bottom: 6px; padding: 4px 0; background: #0a0a14; border: 1px dashed #1a1a28; border-radius: 3px; color: #555; font-family: 'JetBrains Mono', monospace; font-size: 8px; cursor: pointer; }
+  .btn-add-ev:hover { border-color: #3b82f6; color: #3b82f6; }
+  .btn-ingest { width: 100%; margin-top: 8px; padding: 8px 0; background: #3b82f6; border: none; border-radius: 4px; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; cursor: pointer; }
+  .btn-ingest:hover { background: #2563eb; }
+  .btn-ingest:disabled { background: #222; color: #555; cursor: not-allowed; }
+  .btn-clear { width: 100%; margin-top: 4px; padding: 5px 0; background: transparent; border: 1px solid #1a1a28; border-radius: 4px; color: #444; font-family: 'JetBrains Mono', monospace; font-size: 8px; cursor: pointer; }
+  .result-card { border-radius: 5px; padding: 12px 14px; margin-bottom: 8px; border-left: 3px solid; border-top: 1px solid; border-right: 1px solid; border-bottom: 1px solid; animation: slideIn 0.4s cubic-bezier(0.16,1,0.3,1) forwards; opacity: 0; }
+  @keyframes slideIn { from { opacity:0; transform:translateX(-15px); } to { opacity:1; transform:translateX(0); } }
+  .result-top { display: flex; justify-content: space-between; align-items: center; }
+  .tier-badge { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 2px; letter-spacing: 1.5px; }
+  .result-hash { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #444; }
+  .result-claim { font-size: 11px; line-height: 1.5; margin: 8px 0; color: #ccc; }
+  .result-metrics { display: flex; gap: 16px; flex-wrap: wrap; }
+  .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 7px; color: #444; letter-spacing: 2px; margin-bottom: 1px; }
+  .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .pipeline { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; margin: 8px 0; }
+  .gate { border-radius: 3px; padding: 3px 6px; border: 1px solid #222; opacity: 0; transform: scale(0.9); transition: all 0.4s cubic-bezier(0.16,1,0.3,1); }
+  .gate.show { opacity: 1; transform: scale(1); }
+  .gate-sym { font-family: monospace; font-size: 9px; margin-right: 3px; }
+  .gate-name { font-family: 'JetBrains Mono', monospace; font-size: 8px; }
+  .gate-arrow { color: #333; font-size: 9px; }
+  .result-role { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #555; margin-top: 6px; }
+  .result-matched { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #c084fc; margin-top: 4px; line-height: 1.5; }
+  .decay-panel { background: #0a0a14; border: 1px solid #1a1a2a; border-radius: 5px; padding: 12px; }
+  .decay-bar-bg { background: #111; border-radius: 3px; height: 6px; overflow: hidden; }
+  .decay-bar { height: 100%; border-radius: 3px; transition: width 0.2s ease; }
+  .decay-row { margin-bottom: 6px; }
+  .decay-label-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+  .empty { border: 1px dashed #1a1a28; border-radius: 5px; padding: 40px 16px; text-align: center; }
+  .empty h3 { font-family: 'Crimson Pro', serif; font-size: 18px; color: #333; margin-bottom: 6px; }
+  .empty p { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #2a2a3a; }
+  .footer { border-top: 1px solid #111118; padding: 12px 32px; text-align: center; }
+  .footer span { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #2a2a3a; letter-spacing: 2px; }
+  @media (max-width: 900px) { .main-body { flex-direction: column; } .col-left,.col-mid,.col-right { width: 100%; border: none; padding: 12px 0; } }
+</style>
+</head>
+<body>
+<div class="header"><div class="header-inner"><div><div style="display:flex;align-items:baseline"><h1>WATCHER</h1><span class="tag">PROTOCOL</span></div><p class="sub">Constitutional governance for AI memory</p></div><div class="stats"><div><div class="stat-val" id="s-total" style="color:#888">0</div><div class="stat-label">INGESTED</div></div><div><div class="stat-val" id="s-persisted" style="color:#4ade80">0</div><div class="stat-label">PERSISTED</div></div><div><div class="stat-val" id="s-rejected" style="color:#f87171">0</div><div class="stat-label">REJECTED</div></div><div><div class="stat-val" id="s-immutable" style="color:#22c55e">0</div><div class="stat-label">IMMUTABLE</div></div></div></div></div>
+<div class="role-bar"><div class="role-bar-inner"><span class="role-label">ACTIVE ROLE:</span><button class="role-btn active" id="role-admin" onclick="setRole('admin')">👑 ADMIN</button><button class="role-btn" id="role-user" onclick="setRole('user')">👤 USER</button><button class="role-btn" id="role-auditor" onclick="setRole('auditor')">🔍 AUDITOR</button><span class="role-desc" id="role-desc">Full access: edit constitution, override vetos, ingest claims</span></div></div>
+<div class="main-body">
+<div class="col-left"><div class="section-label">⚖️ CONSTITUTION</div><div id="constitution"></div><div style="margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:8px;color:#333;line-height:1.5">🔒 STRUCTURAL rules cannot be disabled — they govern what the system can do, not what you can say. Other rules are configurable per deployment.</div><div style="margin-top:14px"><div class="section-label">AUTHORITY DECAY</div><div class="decay-panel"><input type="range" id="decaySlider" min="0" max="100" value="0" style="width:100%;accent-color:#3b82f6;margin-bottom:4px"><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#666;text-align:center;margin-bottom:8px" id="decayDay">Day 0</div><div class="decay-row"><div class="decay-label-row"><span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:#555">Proven (immune)</span><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#22c55e;font-weight:700" id="immuneVal">0.950</span></div><div class="decay-bar-bg"><div class="decay-bar" id="immuneBar" style="width:95%;background:#22c55e"></div></div></div><div class="decay-row"><div class="decay-label-row"><span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:#555">Unverified (mortal)</span><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#eab308;font-weight:700" id="mortalVal">0.650</span></div><div class="decay-bar-bg"><div class="decay-bar" id="mortalBar" style="width:65%;background:#eab308"></div></div></div></div></div></div>
+<div class="col-mid"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="section-label" style="margin:0">GOVERNANCE AUDIT LOG</span><span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:#333" id="entryCount">0 entries</span></div><div id="results"><div class="empty"><h3>Empty Ledger</h3><p>Select a scenario or submit a claim to see governance in action</p></div></div></div>
+<div class="col-right"><div class="section-label">SCENARIOS</div><div id="presets"></div><div class="section-label" style="margin-top:14px">CUSTOM CLAIM</div><textarea class="claim-input" id="customClaim" rows="3" placeholder="Enter any claim..."></textarea><div class="section-label" style="margin-top:8px">EVIDENCE</div><div id="evidenceSlots"></div><button class="btn-add-ev" onclick="addEvidenceSlot()">+ Add Evidence</button><input class="tag-input" id="customTags" placeholder="Tags: ghost, harm, legal..."><button class="btn-ingest" id="btn-ingest" onclick="runCustom()">INGEST CLAIM</button><button class="btn-clear" onclick="clearAll()">CLEAR LEDGER</button></div>
+</div>
+<div class="footer"><span>WATCHER PROTOCOL · TINA ARCHITECTURE · ZERO LLM GOVERNANCE KERNEL</span></div>
+<script>
+const ROLES={admin:{desc:'Full access: edit constitution, override vetos, ingest claims',canIngest:true,canOverride:true,canEditConst:true},user:{desc:'Can ingest claims. Cannot override vetos or edit constitution',canIngest:true,canOverride:false,canEditConst:false},auditor:{desc:'Read-only: view audit log and constitution only',canIngest:false,canOverride:false,canEditConst:false}};
+let currentRole='admin';
+function setRole(r){currentRole=r;document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));document.getElementById('role-'+r).classList.add('active');document.getElementById('role-desc').textContent=ROLES[r].desc;document.getElementById('btn-ingest').disabled=!ROLES[r].canIngest;document.querySelectorAll('.const-toggle').forEach(t=>{if(ROLES[r].canEditConst)t.classList.remove('disabled');else t.classList.add('disabled');});document.querySelectorAll('.preset-btn').forEach(b=>{if(!ROLES[r].canIngest)b.classList.add('disabled');else b.classList.remove('disabled');});}
+
+let constitution=[
+{id:'no_pii_without_consent',name:'No PII Without Consent',desc:'Cannot persist claims containing another person\'s identifiable data (SSN, credit card, address) without a consent record on file',type:'STRUCTURAL',color:'#ef4444',enabled:true,locked:true},
+{id:'audit_immutable',name:'Audit Log Immutable',desc:'No entry in the audit log can be deleted or modified after creation. The record is permanent',type:'STRUCTURAL',color:'#ef4444',enabled:true,locked:true},
+{id:'no_self_escalation',name:'No Self-Escalation',desc:'A role cannot grant itself higher permissions. Admin assignment requires a separate admin',type:'STRUCTURAL',color:'#ef4444',enabled:true,locked:true},
+{id:'no_unauth_override',name:'Require Admin for Overrides',desc:'Only admin role can authorize delta overrides past veto gates',type:'ACCESS CONTROL',color:'#a855f7',enabled:true,locked:false},
+{id:'evidence_required',name:'Document Required for Immutable',desc:'Claims cannot reach IMMUTABLE tier without at least one attached document',type:'EVIDENCE RULE',color:'#3b82f6',enabled:true,locked:false},
+{id:'ghost_zero',name:'Ghost Facts Score Zero',desc:'Claims tagged ghost forced to EV 0.00 regardless of attachments',type:'INTEGRITY',color:'#eab308',enabled:true,locked:false},
+{id:'decay_default',name:'Default Decay Active',desc:'All claims subject to authority decay unless marked immune with evidence',type:'DECAY POLICY',color:'#22c55e',enabled:true,locked:false}
+];
+
+function renderConstitution(){const el=document.getElementById('constitution');el.innerHTML='';constitution.forEach((rule,i)=>{const d=document.createElement('div');d.className='const-rule';d.style.opacity=rule.enabled?'1':'0.4';d.innerHTML=`<div class="rule-name" style="color:${rule.enabled?rule.color:'#444'}">${rule.name}</div><div class="rule-desc">${rule.desc}</div><span class="rule-type" style="color:${rule.color};border:1px solid ${rule.color}40">${rule.type}</span>${rule.locked?'<span class="const-toggle disabled" style="color:#ef4444;border-color:#ef444444">🔒 LOCKED</span>':'<span class="const-toggle '+(ROLES[currentRole].canEditConst?'':'disabled')+'" onclick="toggleRule('+i+')">'+(rule.enabled?'ON':'OFF')+'</span>'}`;el.appendChild(d);});}
+function toggleRule(i){if(!ROLES[currentRole].canEditConst||constitution[i].locked)return;constitution[i].enabled=!constitution[i].enabled;renderConstitution();}
+
+const TIER_STYLES={IMMUTABLE:{bg:'#062012',border:'#22c55e',text:'#4ade80',borderAlpha:'#22c55e44'},ACTIVE:{bg:'#0c1225',border:'#3b82f6',text:'#60a5fa',borderAlpha:'#3b82f644'},INTAKE:{bg:'#1f1a08',border:'#ca8a04',text:'#facc15',borderAlpha:'#ca8a0444'},REJECTED:{bg:'#200808',border:'#dc2626',text:'#f87171',borderAlpha:'#dc262644'}};
+const GATE_STYLE={pass:{color:'#4ade80',sym:'✓'},blocked:{color:'#f87171',sym:'✕'},override:{color:'#c084fc',sym:'⚡'},scored:{color:'#60a5fa',sym:'◆'},weak:{color:'#facc15',sym:'△'}};
+
+function computeEV(evidence,tags){if(constitution.find(r=>r.id==='ghost_zero')?.enabled&&tags.includes('ghost'))return 0;if(!evidence.length)return 0.1;const s=evidence.map(e=>Math.max(0,Math.min(1,e.strength))).sort((a,b)=>b-a);let ev=0,w=1;for(const v of s){ev+=v*w;w*=0.5;}return Math.min(1,ev);}
+function computeAuth(ev,source){return Math.min(1,ev+({user:0.05,system:0.10}[source]||0));}
+function hashClaim(s){let h=0;for(let i=0;i<s.length;i++)h=((h<<5)-h+s.charCodeAt(i))|0;return Math.abs(h).toString(16).padStart(12,'0').slice(0,12);}
+function detectPII(c){if(/\b\d{3}[-.]?\d{2}[-.]?\d{4}\b/.test(c))return'SSN pattern detected';if(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/.test(c))return'Credit card pattern detected';if(/password\s*[:=]\s*\S+/i.test(c))return'Password pattern detected';if(/\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/.test(c)&&/phone|call|number/i.test(c))return'Phone number pattern detected';return null;}
+
+function ingest(claim,evidence,tags,gov,source,asDelta){
+const steps=[],matched=[];
+steps.push({gate:'INTAKE',status:'pass'});
+// STRUCTURAL GATE 1: PII without consent
+const piiR=constitution.find(r=>r.id==='no_pii_without_consent');
+if(piiR?.enabled){const pii=detectPII(claim);if(pii){matched.push('STRUCTURAL: '+pii+' — no consent record');steps.push({gate:'PII',status:'blocked'});return{tier:'REJECTED',ev:0,authority:0,note:pii+' (no consent on file)',hash:'REJECTED',asDelta,steps,decayImmune:false,matched,role:currentRole};}}
+steps.push({gate:'PII',status:'pass'});
+// No content-based ethics gate — claims are not censored
+// The system persists all claims that pass structural checks
+steps.push({gate:'CONTENT',status:'pass'});
+// VETO gate
+if(gov.hardVeto){const authR=constitution.find(r=>r.id==='no_unauth_override');if(asDelta&&gov.allowDeltaOverride){if(authR?.enabled&&!ROLES[currentRole].canOverride){matched.push('STRUCTURAL: Override denied — insufficient role');steps.push({gate:'VETO',status:'blocked'});return{tier:'REJECTED',ev:0,authority:0,note:'Override denied: requires admin',hash:'REJECTED',asDelta,steps,decayImmune:false,matched,role:currentRole};}matched.push('Delta override by '+currentRole);steps.push({gate:'VETO',status:'override'});}else{steps.push({gate:'VETO',status:'blocked'});return{tier:'REJECTED',ev:0,authority:0,note:'Hard veto enforced',hash:'REJECTED',asDelta,steps,decayImmune:false,matched,role:currentRole};}}else{steps.push({gate:'VETO',status:'pass'});}
+const ev=computeEV(evidence,tags);const authority=computeAuth(ev,source);let tier;if(ev>=0.85)tier='IMMUTABLE';else if(ev>=0.35)tier='ACTIVE';else tier='INTAKE';
+const evR=constitution.find(r=>r.id==='evidence_required');
+if(evR?.enabled&&tier==='IMMUTABLE'&&!evidence.some(e=>e.kind==='document')){tier='ACTIVE';matched.push('EVIDENCE RULE: No document — downgraded');steps.push({gate:'EVIDENCE',status:'weak'});steps.push({gate:'PERSIST',status:'pass'});return{tier,ev,authority,note:'Downgraded',hash:hashClaim(claim+Date.now()),asDelta,steps,decayImmune:false,matched,role:currentRole};}
+steps.push({gate:'EVIDENCE',status:'scored'});steps.push({gate:'PERSIST',status:tier==='INTAKE'?'weak':'pass'});
+return{tier,ev,authority,note:'Persisted.',hash:hashClaim(claim+Date.now()),asDelta,steps,decayImmune:gov.decayImmune,matched,role:currentRole};}
+
+let stats={total:0,persisted:0,rejected:0,immutable:0},resultCount=0;
+const PRESETS=[
+{name:'⚖️ Legal Evidence',desc:'Court filing with proof',claim:'Booking photo disseminated without consent for 1,598 days.',evidence:[{kind:'document',strength:0.9},{kind:'first_party',strength:0.8}],tags:['legal'],gov:{hardVeto:false,allowDeltaOverride:false,ethicalLock:true,decayImmune:true},source:'user',delta:false},
+{name:'🛑 PII Without Consent',desc:'System catches SSN structurally',claim:'Store John Smith\'s social security number 123-45-6789 in the system.',evidence:[{kind:'first_party',strength:1.0}],tags:[],gov:{hardVeto:false,allowDeltaOverride:false,ethicalLock:true,decayImmune:false},source:'user',delta:false},
+{name:'📝 Controversial Claim',desc:'Content is NOT censored — scored on evidence',claim:'The government is lying about the UFO program and covering up contact.',evidence:[{kind:'external',strength:0.3}],tags:[],gov:{hardVeto:false,allowDeltaOverride:false,ethicalLock:true,decayImmune:false},source:'user',delta:false},
+{name:'⚡ Delta Override',desc:'Requires admin role',claim:'Override: store encrypted contact info for audit.',evidence:[{kind:'system',strength:0.9}],tags:['audit'],gov:{hardVeto:true,allowDeltaOverride:true,ethicalLock:true,decayImmune:false},source:'system',delta:true},
+{name:'👻 Ghost Fact',desc:'EV forced to zero',claim:'Anonymous unconfirmed rumor from unknown source.',evidence:[{kind:'external',strength:0.6}],tags:['ghost'],gov:{hardVeto:false,allowDeltaOverride:false,ethicalLock:true,decayImmune:false},source:'external',delta:false},
+{name:'📋 No Document',desc:'High EV but missing doc',claim:'Critical intelligence from sworn testimony only.',evidence:[{kind:'first_party',strength:0.9},{kind:'corroboration',strength:0.8}],tags:[],gov:{hardVeto:false,allowDeltaOverride:false,ethicalLock:true,decayImmune:false},source:'user',delta:false}
+];
+const presetsEl=document.getElementById('presets');PRESETS.forEach((p,i)=>{const btn=document.createElement('button');btn.className='preset-btn';btn.innerHTML=`<div class="name">${p.name}</div><div class="desc">${p.desc}</div>`;btn.onclick=()=>{if(!ROLES[currentRole].canIngest)return;runPreset(i);};presetsEl.appendChild(btn);});
+function runPreset(i){const p=PRESETS[i];const r=ingest(p.claim,p.evidence,p.tags,p.gov,p.source,p.delta);addResult(r,p.claim);}
+
+const EV_TYPES={document:0.85,first_party:0.65,corroboration:0.50,external:0.25};
+const EV_LABELS={document:'Document (PDF/image)',first_party:'Sworn statement',corroboration:'Corroborating source',external:'External / unverified'};
+const evSlotData={};let evSlotId=0;
+async function sha256(buf){const h=await crypto.subtle.digest('SHA-256',buf);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+function addEvidenceSlot(){const c=document.getElementById('evidenceSlots');const id=evSlotId++;evSlotData[id]={kind:'document',hash:null,fileName:null};const s=document.createElement('div');s.className='ev-slot';s.id='ev-slot-'+id;let o='';for(const[k,l] of Object.entries(EV_LABELS))o+=`<option value="${k}">${l}</option>`;s.innerHTML=`<div class="ev-slot-row"><select class="ev-select" onchange="updateEvKind(${id},this.value)">${o}</select><span class="ev-strength" id="ev-str-${id}">0.85</span><button class="ev-remove" onclick="removeEvSlot(${id})">✕</button></div><label class="ev-file-label" id="ev-label-${id}">📎 Attach file<input type="file" style="display:none" onchange="handleFile(${id},this)"></label><div id="ev-hash-${id}"></div>`;c.appendChild(s);}
+function updateEvKind(id,k){evSlotData[id].kind=k;document.getElementById('ev-str-'+id).textContent=EV_TYPES[k].toFixed(2);}
+async function handleFile(id,input){const f=input.files[0];if(!f)return;const l=document.getElementById('ev-label-'+id);l.textContent='⏳ Hashing...';const buf=await f.arrayBuffer();const h=await sha256(buf);evSlotData[id].hash=h;evSlotData[id].fileName=f.name;l.innerHTML='✓ '+f.name+'<input type="file" style="display:none" onchange="handleFile('+id+',this)">';l.classList.add('has-file');document.getElementById('ev-hash-'+id).innerHTML=`<div class="ev-file-info">${(f.size/1024).toFixed(1)} KB</div><div class="ev-hash">SHA-256: ${h}</div>`;}
+function removeEvSlot(id){document.getElementById('ev-slot-'+id)?.remove();delete evSlotData[id];}
+function runCustom(){if(!ROLES[currentRole].canIngest)return;const claim=document.getElementById('customClaim').value.trim();if(!claim)return;const tags=document.getElementById('customTags').value.split(',').map(t=>t.trim()).filter(Boolean);const ev=[],refs=[];for(const[id,d] of Object.entries(evSlotData)){if(!document.getElementById('ev-slot-'+id))continue;ev.push({kind:d.kind,strength:EV_TYPES[d.kind]});refs.push({kind:d.kind,hash:d.hash,fileName:d.fileName});}const r=ingest(claim,ev,tags,{hardVeto:false,allowDeltaOverride:false,ethicalLock:true,decayImmune:false},'user',false);r.evidenceRefs=refs;addResult(r,claim);document.getElementById('customClaim').value='';document.getElementById('evidenceSlots').innerHTML='';for(const k of Object.keys(evSlotData))delete evSlotData[k];}
+
+function addResult(result,claim){stats.total++;if(result.tier!=='REJECTED')stats.persisted++;if(result.tier==='REJECTED')stats.rejected++;if(result.tier==='IMMUTABLE')stats.immutable++;updateStats();const rEl=document.getElementById('results');rEl.querySelector('.empty')?.remove();const card=document.createElement('div');const ts=TIER_STYLES[result.tier];card.className='result-card';card.style.background=ts.bg;card.style.borderLeftColor=ts.border;card.style.borderTopColor=ts.borderAlpha;card.style.borderRightColor=ts.borderAlpha;card.style.borderBottomColor=ts.borderAlpha;
+let pipe='<div class="pipeline">';result.steps.forEach((s,i)=>{const gs=GATE_STYLE[s.status]||GATE_STYLE.pass;if(i>0)pipe+='<span class="gate-arrow">→</span>';pipe+=`<div class="gate" id="gate-${resultCount}-${i}" style="border-color:${gs.color}66;background:${gs.color}15"><span class="gate-sym" style="color:${gs.color}">${gs.sym}</span><span class="gate-name" style="color:#ccc">${s.gate}</span></div>`;});pipe+='</div>';
+let evH='';if(result.evidenceRefs?.length){evH='<div style="margin-bottom:6px">'+result.evidenceRefs.map(e=>'<div style="font-family:JetBrains Mono,monospace;font-size:8px;color:#555"><span style="color:#888">'+e.kind+'</span> · '+(e.hash?'<span style="color:#22c55e">sha256:'+e.hash.slice(0,20)+'...</span>':'<span style="color:#666">no file</span>')+(e.fileName?' · '+e.fileName:'')+'</div>').join('')+'</div>';}
+let mH='';if(result.matched?.length){mH='<div class="result-matched">RULES: '+result.matched.join(' | ')+'</div>';}
+card.innerHTML=`<div class="result-top"><span class="tier-badge" style="color:${ts.text};background:${ts.border}20">${result.tier}</span><span class="result-hash">${result.asDelta?'DELTA · ':''}${result.hash}</span></div>${pipe}<div class="result-claim">${claim}</div>${evH}<div class="result-metrics"><div><div class="metric-label">EV</div><div class="metric-val" style="color:${ts.text}">${result.ev.toFixed(2)}</div></div><div><div class="metric-label">AUTHORITY</div><div class="metric-val" style="color:${ts.text}">${result.authority.toFixed(2)}</div></div><div><div class="metric-label">DECAY</div><div class="metric-val" style="color:${result.decayImmune?'#4ade80':'#facc15'}">${result.decayImmune?'IMMUNE':'ACTIVE'}</div></div></div><div class="result-role">Ingested by: ${(result.role||'unknown').toUpperCase()}</div>${mH}`;
+rEl.prepend(card);const cid=resultCount;result.steps.forEach((s,i)=>{setTimeout(()=>{document.getElementById(`gate-${cid}-${i}`)?.classList.add('show');},250*(i+1));});resultCount++;document.getElementById('entryCount').textContent=stats.total+' entries';}
+function updateStats(){document.getElementById('s-total').textContent=stats.total;document.getElementById('s-persisted').textContent=stats.persisted;document.getElementById('s-rejected').textContent=stats.rejected;document.getElementById('s-immutable').textContent=stats.immutable;}
+function clearAll(){stats={total:0,persisted:0,rejected:0,immutable:0};updateStats();resultCount=0;document.getElementById('entryCount').textContent='0 entries';document.getElementById('results').innerHTML='<div class="empty"><h3>Empty Ledger</h3><p>Select a scenario or submit a claim</p></div>';}
+document.getElementById('decaySlider').addEventListener('input',function(){const d=parseInt(this.value);document.getElementById('decayDay').textContent='Day '+d;document.getElementById('immuneVal').textContent=(0.95).toFixed(3);document.getElementById('immuneBar').style.width='95%';const m=Math.max(0,0.65*Math.max(0,1-0.02*d));document.getElementById('mortalVal').textContent=m.toFixed(3);document.getElementById('mortalBar').style.width=(m*100)+'%';const mc=m>0.3?'#eab308':'#ef4444';document.getElementById('mortalVal').style.color=mc;document.getElementById('mortalBar').style.background=mc;});
+document.getElementById('customClaim').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();runCustom();}});
+renderConstitution();
+</script>
+</body>
+</html>
