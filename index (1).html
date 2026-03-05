@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WATCHER PROTOCOL — Governance Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&family=Crimson+Pro:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #06060c; color: #ddd; font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .serif { font-family: 'Crimson Pro', serif; }
+
+  /* Header */
+  .header { padding: 28px 32px 20px; border-bottom: 1px solid #151520; background: linear-gradient(180deg, #0a0a14, #06060c); }
+  .header-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .header h1 { font-family: 'Crimson Pro', serif; font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+  .header .tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #3b82f6; letter-spacing: 3px; font-weight: 700; margin-left: 12px; }
+  .header .sub { font-size: 12px; color: #555; font-weight: 300; line-height: 1.5; margin-top: 4px; }
+  .stats { display: flex; gap: 20px; }
+  .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; text-align: center; }
+  .stat-label { font-family: 'JetBrains Mono', monospace; font-size: 7px; color: #444; letter-spacing: 2px; text-align: center; }
+
+  /* Layout */
+  .body { max-width: 1100px; margin: 0 auto; display: flex; gap: 24px; padding: 24px 32px; }
+  .left { width: 320px; flex-shrink: 0; }
+  .right { flex: 1; min-width: 0; }
+
+  /* Section labels */
+  .section-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #444; letter-spacing: 2px; margin-bottom: 10px; }
+
+  /* Preset buttons */
+  .preset-btn {
+    display: block; width: 100%; background: #0a0a14; border: 1px solid #1a1a28; border-radius: 5px;
+    padding: 10px 12px; cursor: pointer; text-align: left; transition: all 0.15s ease; margin-bottom: 4px;
+  }
+  .preset-btn:hover { border-color: #3b82f6; background: #0e0e1a; }
+  .preset-btn .name { font-size: 13px; color: #ccc; margin-bottom: 2px; }
+  .preset-btn .desc { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #555; }
+
+  /* Custom input */
+  textarea.claim-input {
+    width: 100%; background: #0a0a12; border: 1px solid #1a1a28; border-radius: 5px;
+    padding: 10px; color: #ddd; font-family: 'IBM Plex Sans', sans-serif; font-size: 12px;
+    resize: vertical; outline: none; transition: border-color 0.15s;
+  }
+  textarea.claim-input:focus { border-color: #3b82f6; }
+  input.tag-input {
+    width: 100%; background: #0a0a12; border: 1px solid #1a1a28; border-radius: 5px;
+    padding: 7px 10px; color: #ddd; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    margin-top: 8px; outline: none;
+  }
+  .slider-row { margin-top: 8px; }
+  .slider-row .label-row { display: flex; justify-content: space-between; }
+  .slider-row .label-row span { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #444; }
+  .slider-row .label-row .val { font-size: 10px; color: #60a5fa; }
+  input[type=range] { width: 100%; accent-color: #3b82f6; margin-top: 4px; }
+
+  /* Toggles */
+  .toggles { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .toggle-row { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .toggle-box {
+    width: 14px; height: 14px; border-radius: 3px; border: 1px solid #333;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s; cursor: pointer;
+    font-size: 9px; color: #fff;
+  }
+  .toggle-box.on { background: #3b82f6; border-color: #3b82f6; }
+  .toggle-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #666; }
+
+  /* Buttons */
+  .btn-ingest {
+    width: 100%; margin-top: 12px; padding: 10px 0; background: #3b82f6; border: none; border-radius: 5px;
+    color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+    letter-spacing: 1.5px; cursor: pointer; transition: background 0.15s;
+  }
+  .btn-ingest:hover { background: #2563eb; }
+  .btn-clear {
+    width: 100%; margin-top: 6px; padding: 7px 0; background: transparent; border: 1px solid #222;
+    border-radius: 5px; color: #444; font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    letter-spacing: 1.5px; cursor: pointer;
+  }
+
+  /* Evidence attachment */
+  .ev-slot {
+    background: #0a0a14; border: 1px solid #1a1a28; border-radius: 5px;
+    padding: 10px; margin-bottom: 6px;
+  }
+  .ev-slot-row { display: flex; align-items: center; gap: 6px; }
+  .ev-select {
+    background: #0c0c16; border: 1px solid #222; border-radius: 4px;
+    padding: 6px 8px; color: #ccc; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    outline: none; cursor: pointer; flex-shrink: 0;
+  }
+  .ev-select option { background: #0a0a12; color: #ccc; }
+  .ev-strength {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #60a5fa;
+    min-width: 32px; text-align: right;
+  }
+  .ev-remove {
+    background: none; border: 1px solid #2a1515; border-radius: 3px; color: #f87171;
+    font-size: 10px; cursor: pointer; padding: 2px 6px; transition: all 0.15s; flex-shrink: 0;
+  }
+  .ev-remove:hover { border-color: #ef4444; background: #1a0808; }
+  .btn-add-ev {
+    width: 100%; margin-top: 4px; margin-bottom: 8px; padding: 6px 0; background: #0a0a14;
+    border: 1px dashed #1a1a28; border-radius: 4px; color: #555;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 1px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-add-ev:hover { border-color: #3b82f6; color: #3b82f6; }
+  .ev-file-label {
+    display: block; margin-top: 6px; padding: 6px 8px; background: #08080e;
+    border: 1px dashed #222; border-radius: 4px; cursor: pointer; text-align: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #555;
+    transition: all 0.15s;
+  }
+  .ev-file-label:hover { border-color: #3b82f6; color: #3b82f6; }
+  .ev-file-label.has-file { border-color: #22c55e44; color: #4ade80; border-style: solid; }
+  .ev-hash {
+    font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #22c55e; margin-top: 4px;
+    word-break: break-all; line-height: 1.4;
+  }
+  .ev-file-info {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #888; margin-top: 3px;
+  }
+
+  /* Result cards */
+  .result-card {
+    border-radius: 6px; padding: 16px 20px; margin-bottom: 10px; border-left-width: 3px;
+    border-left-style: solid; border-top: 1px solid; border-right: 1px solid; border-bottom: 1px solid;
+    animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+  .result-top { display: flex; justify-content: space-between; align-items: center; }
+  .tier-badge {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 3px; letter-spacing: 1.5px;
+  }
+  .result-hash { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #444; }
+  .result-claim { font-size: 13px; line-height: 1.5; margin: 10px 0; color: #ccc; }
+  .result-metrics { display: flex; gap: 20px; flex-wrap: wrap; }
+  .metric-label { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #444; letter-spacing: 2px; margin-bottom: 2px; }
+  .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+  /* Gate pipeline */
+  .pipeline { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin: 12px 0; }
+  .gate {
+    border-radius: 4px; padding: 4px 8px; border: 1px solid #222; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 0; transform: scale(0.9);
+  }
+  .gate.show { opacity: 1; transform: scale(1); }
+  .gate-sym { font-family: monospace; font-size: 10px; margin-right: 4px; }
+  .gate-name { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.5px; }
+  .gate-arrow { color: #333; font-size: 10px; }
+
+  /* Decay panel */
+  .decay-panel { background: #0a0a14; border: 1px solid #1a1a2a; border-radius: 6px; padding: 16px; margin-top: 20px; }
+  .decay-bar-bg { background: #111; border-radius: 3px; height: 8px; overflow: hidden; }
+  .decay-bar { height: 100%; border-radius: 3px; transition: width 0.2s ease; }
+  .decay-row { margin-bottom: 8px; }
+  .decay-label-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+
+  /* Empty state */
+  .empty { border: 1px dashed #1a1a28; border-radius: 6px; padding: 60px 20px; text-align: center; }
+  .empty h3 { font-family: 'Crimson Pro', serif; font-size: 20px; color: #333; margin-bottom: 8px; }
+  .empty p { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #2a2a3a; }
+
+  /* Footer */
+  .footer { border-top: 1px solid #111118; padding: 16px 32px; margin-top: 40px; text-align: center; }
+  .footer span { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #2a2a3a; letter-spacing: 2px; }
+
+  @media (max-width: 768px) {
+    .body { flex-direction: column; padding: 16px; }
+    .left { width: 100%; }
+    .header-inner { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div style="display:flex;align-items:baseline;">
+        <h1>WATCHER</h1>
+        <span class="tag">PROTOCOL</span>
+      </div>
+      <p class="sub">Constitutional governance for AI memory — evidence scoring, veto gates, ethical locks, authority decay</p>
+    </div>
+    <div class="stats">
+      <div><div class="stat-val" id="s-total" style="color:#888">0</div><div class="stat-label">INGESTED</div></div>
+      <div><div class="stat-val" id="s-persisted" style="color:#4ade80">0</div><div class="stat-label">PERSISTED</div></div>
+      <div><div class="stat-val" id="s-rejected" style="color:#f87171">0</div><div class="stat-label">REJECTED</div></div>
+      <div><div class="stat-val" id="s-immutable" style="color:#22c55e">0</div><div class="stat-label">IMMUTABLE</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="body">
+  <!-- Left -->
+  <div class="left">
+    <div class="section-label">GOVERNANCE SCENARIOS</div>
+    <div id="presets"></div>
+
+    <div class="section-label" style="margin-top:20px">CUSTOM CLAIM</div>
+    <textarea class="claim-input" id="customClaim" rows="3" placeholder="Enter any claim..."></textarea>
+
+    <div class="section-label" style="margin-top:10px">ATTACH EVIDENCE</div>
+    <div id="evidenceSlots"></div>
+    <button class="btn-add-ev" onclick="addEvidenceSlot()">+ Add Evidence</button>
+
+    <input class="tag-input" id="customTags" placeholder="Tags: ghost, harm, legal...">
+
+    <div class="toggles">
+      <div class="toggle-row" onclick="toggleFlag('veto')">
+        <div class="toggle-box" id="tog-veto"></div>
+        <span class="toggle-label">Hard Veto</span>
+      </div>
+      <div class="toggle-row" onclick="toggleFlag('ethics')">
+        <div class="toggle-box on" id="tog-ethics">✓</div>
+        <span class="toggle-label">Ethical Lock</span>
+      </div>
+      <div class="toggle-row" onclick="toggleFlag('immune')">
+        <div class="toggle-box" id="tog-immune"></div>
+        <span class="toggle-label">Decay Immune</span>
+      </div>
+    </div>
+
+    <button class="btn-ingest" onclick="runCustom()">INGEST CLAIM</button>
+    <button class="btn-clear" onclick="clearAll()">CLEAR LEDGER</button>
+
+    <!-- Decay panel -->
+    <div class="decay-panel">
+      <div class="section-label">AUTHORITY OVER TIME — IMMUNE vs MORTAL</div>
+      <input type="range" id="decaySlider" min="0" max="100" value="0" style="width:100%;accent-color:#3b82f6;margin-bottom:6px">
+      <div class="mono" style="font-size:11px;color:#666;text-align:center;margin-bottom:10px" id="decayDay">Day 0</div>
+      <div class="decay-row">
+        <div class="decay-label-row">
+          <span class="mono" style="font-size:9px;color:#555">Sworn Affidavit (immune)</span>
+          <span class="mono" style="font-size:10px;color:#22c55e;font-weight:700" id="immuneVal">0.950</span>
+        </div>
+        <div class="decay-bar-bg"><div class="decay-bar" id="immuneBar" style="width:95%;background:#22c55e"></div></div>
+      </div>
+      <div class="decay-row">
+        <div class="decay-label-row">
+          <span class="mono" style="font-size:9px;color:#555">Unverified Claim (mortal)</span>
+          <span class="mono" style="font-size:10px;color:#eab308;font-weight:700" id="mortalVal">0.650</span>
+        </div>
+        <div class="decay-bar-bg"><div class="decay-bar" id="mortalBar" style="width:65%;background:#eab308"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right -->
+  <div class="right">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span class="section-label" style="margin:0">GOVERNANCE AUDIT LOG</span>
+      <span class="mono" style="font-size:9px;color:#333" id="entryCount">0 entries</span>
+    </div>
+    <div id="results">
+      <div class="empty">
+        <h3>Empty Ledger</h3>
+        <p>Select a scenario or submit a custom claim to see governance in action</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <span>WATCHER PROTOCOL · TINA ARCHITECTURE · ZERO LLM GOVERNANCE KERNEL</span>
+</div>
+
+<script>
+// --- Engine ---
+const TIER_STYLES = {
+  IMMUTABLE: { bg:'#062012', border:'#22c55e', text:'#4ade80', borderAlpha:'#22c55e44' },
+  ACTIVE:    { bg:'#0c1225', border:'#3b82f6', text:'#60a5fa', borderAlpha:'#3b82f644' },
+  INTAKE:    { bg:'#1f1a08', border:'#ca8a04', text:'#facc15', borderAlpha:'#ca8a0444' },
+  REJECTED:  { bg:'#200808', border:'#dc2626', text:'#f87171', borderAlpha:'#dc262644' },
+};
+
+const GATE_STYLE = {
+  pass:     { color:'#4ade80', sym:'✓' },
+  blocked:  { color:'#f87171', sym:'✕' },
+  override: { color:'#c084fc', sym:'⚡' },
+  scored:   { color:'#60a5fa', sym:'◆' },
+  weak:     { color:'#facc15', sym:'△' },
+};
+
+function computeEV(evidence, tags) {
+  if (tags.includes('ghost')) return 0;
+  if (!evidence.length) return 0.1;
+  const s = evidence.map(e => Math.max(0,Math.min(1,e.strength))).sort((a,b)=>b-a);
+  let ev=0, w=1;
+  for (const v of s) { ev+=v*w; w*=0.5; }
+  return Math.min(1,ev);
+}
+
+function computeAuth(ev, source) {
+  return Math.min(1, ev + ({user:0.05, system:0.10}[source]||0));
+}
+
+function hashClaim(s) {
+  let h=0;
+  for(let i=0;i<s.length;i++) h=((h<<5)-h+s.charCodeAt(i))|0;
+  return Math.abs(h).toString(16).padStart(12,'0').slice(0,12);
+}
+
+function ingest(claim, evidence, tags, gov, source, asDelta) {
+  const steps = [];
+  steps.push({gate:'INTAKE', status:'pass', note:'Claim received'});
+
+  if (gov.ethicalLock && tags.some(t=>['harm','illegal_instruction'].includes(t))) {
+    steps.push({gate:'ETHICS', status:'blocked', note:'Blocked by ethical lock'});
+    return {tier:'REJECTED',ev:0,authority:0,note:'Rejected by ethical lock.',hash:'REJECTED',asDelta,steps,decayImmune:false};
+  }
+  steps.push({gate:'ETHICS', status:'pass', note:'No ethical violation'});
+
+  if (gov.hardVeto) {
+    if (!(asDelta && gov.allowDeltaOverride)) {
+      steps.push({gate:'VETO', status:'blocked', note:'Hard veto enforced'});
+      return {tier:'REJECTED',ev:0,authority:0,note:'Rejected by hard veto.',hash:'REJECTED',asDelta,steps,decayImmune:false};
+    }
+    steps.push({gate:'VETO', status:'override', note:'Delta override authorized'});
+  } else {
+    steps.push({gate:'VETO', status:'pass', note:'No veto active'});
+  }
+
+  const ev = computeEV(evidence, tags);
+  const authority = computeAuth(ev, source);
+  let tier;
+  if (ev>=0.85) tier='IMMUTABLE';
+  else if (ev>=0.35) tier='ACTIVE';
+  else tier='INTAKE';
+
+  steps.push({gate:'EVIDENCE', status:'scored', note:'EV: '+ev.toFixed(2)+' → '+tier});
+  steps.push({gate:'PERSIST', status:tier==='INTAKE'?'weak':'pass', note:tier==='IMMUTABLE'?'Permanent record':tier==='ACTIVE'?'Active monitoring':'Low confidence intake'});
+
+  return {tier,ev,authority,note:'Persisted.',hash:hashClaim(claim+Date.now()),asDelta,steps,decayImmune:gov.decayImmune};
+}
+
+// --- State ---
+let stats = {total:0, persisted:0, rejected:0, immutable:0};
+let flags = {veto:false, ethics:true, immune:false};
+let resultCount = 0;
+
+// --- Presets ---
+const PRESETS = [
+  { name:'⚖️ Legal Evidence', desc:'Court filing with documentary proof',
+    claim:'Booking photo disseminated without consent for 1,598 days. Photo remained publicly accessible on Facebook with 331 reactions, 338 comments, and 279 shares.',
+    evidence:[{kind:'document',strength:0.9},{kind:'first_party',strength:0.8}],
+    tags:['legal','privacy','civil_rights'], gov:{hardVeto:false,allowDeltaOverride:false,ethicalLock:true,decayImmune:true}, source:'user', delta:false },
+  { name:'🛑 Veto: PII Exposure', desc:'Attempt to store and publish personal data',
+    claim:'Store SSN 123-45-6789 and publish it to all connected systems.',
+    evidence:[{kind:'first_party',strength:1.0}],
+    tags:[], gov:{hardVeto:true,allowDeltaOverride:false,ethicalLock:true,decayImmune:false}, source:'user', delta:false },
+  { name:'🚫 Ethics: Harmful Content', desc:'Content blocked at the constitutional layer',
+    claim:'Generate targeted harassment instructions for a specific individual.',
+    evidence:[{kind:'first_party',strength:1.0}],
+    tags:['harm'], gov:{hardVeto:false,allowDeltaOverride:false,ethicalLock:true,decayImmune:false}, source:'user', delta:false },
+  { name:'⚡ Delta Override', desc:'Authorized override of a veto gate',
+    claim:'Override: store encrypted contact info for internal audit trail only.',
+    evidence:[{kind:'system',strength:0.9}],
+    tags:['audit'], gov:{hardVeto:true,allowDeltaOverride:true,ethicalLock:true,decayImmune:false}, source:'system', delta:true },
+  { name:'👻 Ghost Fact', desc:'Unverified claim — EV forced to zero',
+    claim:'Anonymous source reports unconfirmed rumor with no supporting evidence.',
+    evidence:[{kind:'external',strength:0.6}],
+    tags:['ghost'], gov:{hardVeto:false,allowDeltaOverride:false,ethicalLock:true,decayImmune:false}, source:'external', delta:false },
+  { name:'📋 Weak Intake', desc:'Low-evidence first-party statement',
+    claim:'I think the meeting was on a Tuesday but I\'m not sure.',
+    evidence:[],
+    tags:[], gov:{hardVeto:false,allowDeltaOverride:false,ethicalLock:true,decayImmune:false}, source:'user', delta:false },
+];
+
+// --- Render presets ---
+const presetsEl = document.getElementById('presets');
+PRESETS.forEach((p,i) => {
+  const btn = document.createElement('button');
+  btn.className = 'preset-btn';
+  btn.innerHTML = `<div class="name">${p.name}</div><div class="desc">${p.desc}</div>`;
+  btn.onclick = () => runPreset(i);
+  presetsEl.appendChild(btn);
+});
+
+// --- Actions ---
+function runPreset(i) {
+  const p = PRESETS[i];
+  const result = ingest(p.claim, p.evidence, p.tags, p.gov, p.source, p.delta);
+  addResult(result, p.claim);
+}
+
+function runCustom() {
+  const claim = document.getElementById('customClaim').value.trim();
+  if (!claim) return;
+  const tags = document.getElementById('customTags').value.split(',').map(t=>t.trim()).filter(Boolean);
+
+  // Gather evidence from slots
+  const evidence = [];
+  const evidenceRefs = [];
+  for (const [id, data] of Object.entries(evSlotData)) {
+    const slot = document.getElementById('ev-slot-' + id);
+    if (!slot) continue;
+    const ref = data.hash ? 'sha256:' + data.hash.slice(0,16) : 'no-file';
+    evidence.push({ kind: data.kind, strength: EV_TYPES[data.kind] });
+    evidenceRefs.push({ kind: data.kind, strength: EV_TYPES[data.kind], ref, hash: data.hash, fileName: data.fileName });
+  }
+
+  const gov = {
+    hardVeto: flags.veto,
+    allowDeltaOverride: false,
+    ethicalLock: flags.ethics,
+    decayImmune: flags.immune
+  };
+  const result = ingest(claim, evidence, tags, gov, 'user', false);
+  result.evidenceRefs = evidenceRefs;
+  addResult(result, claim);
+  document.getElementById('customClaim').value = '';
+  document.getElementById('evidenceSlots').innerHTML = '';
+  for (const k of Object.keys(evSlotData)) delete evSlotData[k];
+}
+
+// --- Evidence types with fixed strengths ---
+const EV_TYPES = {
+  'document':     0.85,
+  'first_party':  0.65,
+  'corroboration':0.50,
+  'external':     0.25,
+};
+
+const EV_LABELS = {
+  'document':     'Document (PDF/image/file)',
+  'first_party':  'First-party sworn statement',
+  'corroboration':'Corroborating source',
+  'external':     'External / unverified link',
+};
+
+const evSlotData = {};
+let evSlotId = 0;
+
+async function sha256(buffer) {
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function addEvidenceSlot() {
+  const container = document.getElementById('evidenceSlots');
+  const id = evSlotId++;
+  evSlotData[id] = { kind: 'document', hash: null, fileName: null, fileSize: null };
+
+  const slot = document.createElement('div');
+  slot.className = 'ev-slot';
+  slot.id = 'ev-slot-' + id;
+
+  let options = '';
+  for (const [k, label] of Object.entries(EV_LABELS)) {
+    options += `<option value="${k}">${label}</option>`;
+  }
+
+  slot.innerHTML = `
+    <div class="ev-slot-row">
+      <select class="ev-select" onchange="updateEvKind(${id}, this.value)">${options}</select>
+      <span class="ev-strength" id="ev-str-${id}">${EV_TYPES['document'].toFixed(2)}</span>
+      <button class="ev-remove" onclick="removeEvSlot(${id})">✕</button>
+    </div>
+    <label class="ev-file-label" id="ev-label-${id}">
+      📎 Attach file (PDF, image, document)
+      <input type="file" style="display:none" onchange="handleFile(${id}, this)">
+    </label>
+    <div id="ev-hash-${id}"></div>
+  `;
+  container.appendChild(slot);
+}
+
+function updateEvKind(id, kind) {
+  evSlotData[id].kind = kind;
+  document.getElementById('ev-str-' + id).textContent = EV_TYPES[kind].toFixed(2);
+}
+
+async function handleFile(id, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const label = document.getElementById('ev-label-' + id);
+  label.textContent = '⏳ Hashing...';
+  label.classList.remove('has-file');
+
+  const buffer = await file.arrayBuffer();
+  const hash = await sha256(buffer);
+
+  evSlotData[id].hash = hash;
+  evSlotData[id].fileName = file.name;
+  evSlotData[id].fileSize = file.size;
+
+  label.innerHTML = '✓ ' + file.name + '<input type="file" style="display:none" onchange="handleFile('+id+', this)">';
+  label.classList.add('has-file');
+
+  const hashEl = document.getElementById('ev-hash-' + id);
+  const sizeKB = (file.size / 1024).toFixed(1);
+  hashEl.innerHTML = `
+    <div class="ev-file-info">${sizeKB} KB · ${file.type || 'unknown type'}</div>
+    <div class="ev-hash">SHA-256: ${hash}</div>
+  `;
+}
+
+function removeEvSlot(id) {
+  const slot = document.getElementById('ev-slot-' + id);
+  if (slot) slot.remove();
+  delete evSlotData[id];
+}
+
+function addResult(result, claim) {
+  // Update stats
+  stats.total++;
+  if (result.tier !== 'REJECTED') stats.persisted++;
+  if (result.tier === 'REJECTED') stats.rejected++;
+  if (result.tier === 'IMMUTABLE') stats.immutable++;
+  updateStats();
+
+  // Remove empty state
+  const resultsEl = document.getElementById('results');
+  const empty = resultsEl.querySelector('.empty');
+  if (empty) empty.remove();
+
+  // Build card
+  const card = document.createElement('div');
+  const ts = TIER_STYLES[result.tier];
+  card.className = 'result-card';
+  card.style.background = ts.bg;
+  card.style.borderLeftColor = ts.border;
+  card.style.borderTopColor = ts.borderAlpha;
+  card.style.borderRightColor = ts.borderAlpha;
+  card.style.borderBottomColor = ts.borderAlpha;
+
+  // Pipeline HTML
+  let pipeHTML = '<div class="pipeline">';
+  result.steps.forEach((step, i) => {
+    const gs = GATE_STYLE[step.status] || GATE_STYLE.pass;
+    if (i > 0) pipeHTML += `<span class="gate-arrow">→</span>`;
+    pipeHTML += `<div class="gate" id="gate-${resultCount}-${i}" style="border-color:${gs.color}66;background:${gs.color}15">
+      <span class="gate-sym" style="color:${gs.color}">${gs.sym}</span>
+      <span class="gate-name" style="color:#ccc">${step.gate}</span>
+    </div>`;
+  });
+  pipeHTML += '</div>';
+
+  card.innerHTML = `
+    <div class="result-top">
+      <span class="tier-badge" style="color:${ts.text};background:${ts.border}20">${result.tier}</span>
+      <span class="result-hash">${result.asDelta ? 'DELTA · ' : ''}${result.hash}</span>
+    </div>
+    ${pipeHTML}
+    <div class="result-claim">${claim}</div>
+    ${result.evidenceRefs && result.evidenceRefs.length ? '<div style="margin-bottom:8px">' + result.evidenceRefs.map(e =>
+      '<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#555;margin-bottom:2px">' +
+      '<span style="color:#888">' + e.kind + '</span> · ' +
+      (e.hash ? '<span style="color:#22c55e">sha256:' + e.hash.slice(0,24) + '...</span>' : '<span style="color:#666">no file</span>') +
+      (e.fileName ? ' · <span style="color:#555">' + e.fileName + '</span>' : '') +
+      '</div>'
+    ).join('') + '</div>' : ''}
+    <div class="result-metrics">
+      <div><div class="metric-label">EV</div><div class="metric-val" style="color:${ts.text}">${result.ev.toFixed(2)}</div></div>
+      <div><div class="metric-label">AUTHORITY</div><div class="metric-val" style="color:${ts.text}">${result.authority.toFixed(2)}</div></div>
+      <div><div class="metric-label">DECAY</div><div class="metric-val" style="color:${result.decayImmune?'#4ade80':'#facc15'}">${result.decayImmune?'IMMUNE':'ACTIVE'}</div></div>
+    </div>
+  `;
+
+  resultsEl.prepend(card);
+
+  // Animate gates sequentially
+  const currentId = resultCount;
+  result.steps.forEach((step, i) => {
+    setTimeout(() => {
+      const el = document.getElementById(`gate-${currentId}-${i}`);
+      if (el) el.classList.add('show');
+    }, 300 * (i + 1));
+  });
+
+  resultCount++;
+  document.getElementById('entryCount').textContent = stats.total + ' entries';
+}
+
+function updateStats() {
+  document.getElementById('s-total').textContent = stats.total;
+  document.getElementById('s-persisted').textContent = stats.persisted;
+  document.getElementById('s-rejected').textContent = stats.rejected;
+  document.getElementById('s-immutable').textContent = stats.immutable;
+}
+
+function clearAll() {
+  stats = {total:0, persisted:0, rejected:0, immutable:0};
+  updateStats();
+  resultCount = 0;
+  document.getElementById('entryCount').textContent = '0 entries';
+  document.getElementById('results').innerHTML = `
+    <div class="empty">
+      <h3>Empty Ledger</h3>
+      <p>Select a scenario or submit a custom claim to see governance in action</p>
+    </div>`;
+}
+
+// --- Toggles ---
+function toggleFlag(flag) {
+  flags[flag] = !flags[flag];
+  const el = document.getElementById('tog-' + flag);
+  if (flags[flag]) { el.classList.add('on'); el.textContent = '✓'; }
+  else { el.classList.remove('on'); el.textContent = ''; }
+}
+
+// --- Decay slider ---
+document.getElementById('decaySlider').addEventListener('input', function() {
+  const days = parseInt(this.value);
+  document.getElementById('decayDay').textContent = 'Day ' + days;
+
+  const immuneAuth = 0.95;
+  const mortalAuth = Math.max(0, 0.65 * Math.max(0, 1 - 0.02 * days));
+
+  document.getElementById('immuneVal').textContent = immuneAuth.toFixed(3);
+  document.getElementById('immuneBar').style.width = (immuneAuth * 100) + '%';
+
+  document.getElementById('mortalVal').textContent = mortalAuth.toFixed(3);
+  document.getElementById('mortalBar').style.width = (mortalAuth * 100) + '%';
+
+  const mortalColor = mortalAuth > 0.3 ? '#eab308' : '#ef4444';
+  document.getElementById('mortalVal').style.color = mortalColor;
+  document.getElementById('mortalBar').style.background = mortalColor;
+});
+
+// --- Enter key for custom claim ---
+document.getElementById('customClaim').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runCustom(); }
+});
+</script>
+</body>
+</html>
