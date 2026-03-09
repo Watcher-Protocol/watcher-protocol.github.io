@@ -1,0 +1,432 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Watcher Framework Diagram</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121933;
+      --panel2: #182247;
+      --text: #e8ecff;
+      --muted: #9fb0e3;
+      --accent: #7aa2ff;
+      --accent2: #8ef0d0;
+      --line: #3a4d8f;
+      --warn: #ffd166;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(circle at top, #14204a 0%, var(--bg) 45%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 2rem;
+      letter-spacing: 0.02em;
+    }
+    .sub {
+      color: var(--muted);
+      margin-bottom: 24px;
+      font-size: 1rem;
+    }
+    .rule-stack {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .rule {
+      background: linear-gradient(180deg, var(--panel2), var(--panel));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 16px;
+      text-align: center;
+      font-weight: 700;
+      color: var(--accent2);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.9fr;
+      gap: 22px;
+      align-items: start;
+    }
+    .flow {
+      background: rgba(18,25,51,0.78);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .flow-title, .side-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 14px;
+      color: var(--accent);
+    }
+    .stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .node {
+      width: min(100%, 620px);
+      background: linear-gradient(180deg, #1a2550, #101833);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    .node .title {
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+      letter-spacing: 0.03em;
+    }
+    .node .meta {
+      color: var(--accent2);
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .node .desc {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+    .arrow {
+      color: var(--warn);
+      font-size: 1.3rem;
+      line-height: 1;
+      user-select: none;
+    }
+    .side {
+      display: grid;
+      gap: 18px;
+    }
+    .panel {
+      background: rgba(18,25,51,0.78);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .overlay-grid {
+      display: grid;
+      gap: 10px;
+    }
+    .overlay-item {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #19234c, #101731);
+      border: 1px solid var(--line);
+    }
+    .overlay-item b { color: var(--accent2); }
+    .db-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .footer {
+      margin-top: 22px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .compact {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+      color: var(--muted);
+      font-size: 0.95rem;
+      background: rgba(10,14,28,0.7);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .hallucination-wall {
+      width: min(100%, 620px);
+      background: linear-gradient(135deg, #2a0a0a 0%, #1a0520 50%, #0a1020 100%);
+      border: 2px solid #ff4444;
+      border-radius: 18px;
+      padding: 16px 18px;
+      box-shadow: 0 0 28px rgba(255, 60, 60, 0.35), 0 8px 20px rgba(0,0,0,0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .hallucination-wall::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, #ff4444, #ff9900, #ff4444, transparent);
+      animation: wallscan 2.8s linear infinite;
+    }
+    @keyframes wallscan {
+      0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; }
+    }
+    .hallucination-wall .title {
+      font-weight: 900;
+      color: #ff4444;
+      margin-bottom: 4px;
+      letter-spacing: 0.08em;
+      font-size: 1.05rem;
+    }
+    .hallucination-wall .meta {
+      color: #ff9900;
+      font-size: 0.88rem;
+      margin-bottom: 8px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .hallucination-wall .desc {
+      color: #e8c0c0;
+      font-size: 0.93rem;
+      line-height: 1.4;
+    }
+    .wall-checks {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .wall-check {
+      background: rgba(255,68,68,0.1);
+      border: 1px solid rgba(255,68,68,0.3);
+      border-radius: 8px;
+      padding: 5px 9px;
+      font-size: 0.82rem;
+      color: #ffbbbb;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .wall-check .icon { color: #ff4444; font-size: 0.9rem; }
+    .rule-wall {
+      background: linear-gradient(180deg, #2a0808, #180510);
+      border: 1px solid #ff4444;
+      border-radius: 16px;
+      padding: 14px 16px;
+      text-align: center;
+      font-weight: 700;
+      color: #ff6666;
+      box-shadow: 0 0 18px rgba(255,60,60,0.25), 0 8px 24px rgba(0,0,0,0.22);
+      position: relative;
+      overflow: hidden;
+    }
+    .rule-wall::after {
+      content: '🧱';
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1rem;
+      opacity: 0.6;
+    }
+    @media (max-width: 900px) {
+      .grid, .rule-stack { grid-template-columns: 1fr; }
+      .wall-checks { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Watcher Framework</h1>
+    <div class="sub">Personal intelligence / archive / analysis system</div><div class="rule-stack">
+  <div class="rule">Evidence First</div>
+  <div class="rule">Pattern Second</div>
+  <div class="rule">Interpretation Last</div>
+  <div class="rule-wall">Prove It or It Fades</div>
+</div>
+
+<div class="grid">
+  <section class="flow">
+    <div class="flow-title">Operational Flow</div>
+    <div class="stack">
+      <div class="node">
+        <div class="title">INPUT</div>
+        <div class="meta">Documents / Events / Notes / Observations / Files</div>
+        <div class="desc">Everything entering the system starts here.</div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node">
+        <div class="title">1. OBSERVATION</div>
+        <div class="meta">Watcher Layer</div>
+        <div class="desc">Detect signals, spot anomalies, flag relevance.</div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node">
+        <div class="title">2. SOURCE EVALUATION</div>
+        <div class="meta">Intelligence Layer</div>
+        <div class="desc">Rate source reliability (A–E), information credibility (1–5), and triage importance.</div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node">
+        <div class="title">3. CAPTURE</div>
+        <div class="meta">Evidence Layer</div>
+        <div class="desc">Preserve raw data, exact text, screenshots, hashes, and original form before analysis.</div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node">
+        <div class="title">4. ARCHIVE</div>
+        <div class="meta">Archivist Layer</div>
+        <div class="desc">Assign IDs, timestamps, tags, and relationship links to build long-term memory.</div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node">
+        <div class="title">5. PATTERN</div>
+        <div class="meta">Mapping Layer</div>
+        <div class="desc">Connect entities, detect recurrence, and build graph relationships across records.</div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node">
+        <div class="title">6. HYPOTHESES</div>
+        <div class="meta">Detective Layer</div>
+        <div class="desc">Propose models, compare theories, test alternatives, and attach supporting/contradicting evidence.</div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="hallucination-wall">
+        <div class="title">⛔ HALLUCINATION WALL</div>
+        <div class="meta">Governance Gate — Prove It or It Fades</div>
+        <div class="desc">Hard stop. No claim advances to Assessment without a verified evidence anchor. Unverified assertions are flagged, downgraded, or rejected — not silently passed through.</div>
+        <div class="wall-checks">
+          <div class="wall-check"><span class="icon">🔗</span> Evidence link required</div>
+          <div class="wall-check"><span class="icon">🔒</span> SHA-256 hash check</div>
+          <div class="wall-check"><span class="icon">📊</span> Confidence floor ≥ 2/5</div>
+          <div class="wall-check"><span class="icon">🚫</span> Hallucination = reject</div>
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node">
+        <div class="title">7. ASSESSMENT</div>
+        <div class="meta">Judgment Layer</div>
+        <div class="desc">Weigh evidence, assign confidence, and note assumptions and uncertainties.</div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node">
+        <div class="title">8. ACTION / SIGNAL</div>
+        <div class="meta">Strategist Layer</div>
+        <div class="desc">Report, monitor, investigate further, or archive outcome into the system.</div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="node">
+        <div class="title">9. FEEDBACK LOOP</div>
+        <div class="meta">Revision Layer</div>
+        <div class="desc">New questions generate new observations and force model refinement.</div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <section class="panel">
+      <div class="side-title">Four-Archetype Overlay</div>
+      <div class="overlay-grid">
+        <div class="overlay-item"><b>Watcher</b> = Observation + Signal Detection</div>
+        <div class="overlay-item"><b>Detective</b> = Hypotheses + Investigation</div>
+        <div class="overlay-item"><b>Archivist</b> = Capture + Archive + Memory</div>
+        <div class="overlay-item"><b>Strategist</b> = Assessment + Action + Output</div>
+      </div>
+    </section>
+
+    <section class="panel" style="border-color: rgba(255,68,68,0.4); background: rgba(30,8,8,0.7);">
+      <div class="side-title" style="color: #ff6666;">Hallucination Wall</div>
+      <div style="color: #e8c0c0; font-size: 0.93rem; line-height: 1.5; margin-bottom: 10px;">
+        Hard governance gate between Hypotheses and Assessment. Any claim lacking a verified evidence anchor is <strong style="color:#ff4444;">blocked</strong>.
+      </div>
+      <div class="overlay-grid">
+        <div class="overlay-item" style="border-color: rgba(255,68,68,0.3); background: linear-gradient(180deg, #1a0808, #100510);">
+          <b style="color:#ff9900;">Input</b> → Hypothesis + supporting evidence IDs
+        </div>
+        <div class="overlay-item" style="border-color: rgba(255,68,68,0.3); background: linear-gradient(180deg, #1a0808, #100510);">
+          <b style="color:#ff9900;">Gate checks</b> → hash integrity, source grade, confidence floor
+        </div>
+        <div class="overlay-item" style="border-color: rgba(255,68,68,0.3); background: linear-gradient(180deg, #1a0808, #100510);">
+          <b style="color:#ff9900;">Pass</b> → advances to Assessment with confidence score
+        </div>
+        <div class="overlay-item" style="border-color: rgba(255,68,68,0.3); background: linear-gradient(180deg, #1a0808, #100510);">
+          <b style="color:#ff4444;">Fail</b> → flagged, downgraded, returned to Hypotheses
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <ul class="db-list">
+        <li>cases</li>
+        <li>observations → source_evaluations</li>
+        <li>evidence → evidence_tags</li>
+        <li>patterns</li>
+        <li>hypotheses → hypothesis_evidence</li>
+        <li>assessments</li>
+        <li>actions</li>
+        <li>timeline</li>
+        <li>worksheets</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <div class="side-title">Data Flow</div>
+      <div class="compact">INPUT
+
+↓ OBSERVE ↓ SCORE SOURCE ↓ CAPTURE ↓ ARCHIVE ↓ LINK ↓ ANALYZE ↓ ⛔ WALL ↓ ASSESS ↓ ACT ↓ REVIEW ↺</div> </section> </aside> </div>
+
+<div class="footer">
+  <section class="panel">
+    <div class="side-title">Compact Diagram</div>
+    <div class="compact">        ┌───────────┐
+    │   INPUT   │
+    └─────┬─────┘
+          ▼
+   ┌──────────────┐
+   │ OBSERVATION  │
+   └──────┬───────┘
+          ▼
+   ┌──────────────┐
+   │ SOURCE EVAL  │
+   └──────┬───────┘
+          ▼
+   ┌──────────────┐
+   │   CAPTURE    │
+   └──────┬───────┘
+          ▼
+   ┌──────────────┐
+   │   ARCHIVE    │
+   └──────┬───────┘
+          ▼
+   ┌──────────────┐
+   │   PATTERN    │
+   └──────┬───────┘
+          ▼
+   ┌──────────────┐
+   │ HYPOTHESES   │
+   └──────┬───────┘
+          ▼
+   ╔══════════════╗
+   ║ HALLUCINATION║  ← GOVERNANCE GATE
+   ║    WALL  ⛔  ║    prove it or it fades
+   ╚══════╤═══════╝
+          ▼
+   ┌──────────────┐
+   │ ASSESSMENT   │
+   └──────┬───────┘
+          ▼
+   ┌──────────────┐
+   │ ACTION/SIGNAL│
+   └──────┬───────┘
+          ▼
+   ┌──────────────┐
+   │ FEEDBACK LOOP│
+   └──────────────┘</div>
+  </section>
+</div>
+
+  </div>
+</body>
+</html>
