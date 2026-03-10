@@ -1,0 +1,23 @@
+
+TINA + Scrollfire PBC
+Watcher Protocol — Constitutional governance engine for AI memory
+Principal Architect: J. Wayne LaRosa-Perkins
+"""
+
+__version__ = "1.0.0"
+__author__ = "J. Wayne LaRosa-Perkins"
+__org__ = "TINA + Scrollfire PBC"
+
+from .firewall import WatcherFirewall
+from .ledger import AuditLedger
+from .metrics import PetrusEngine
+from .governance import GovernanceGate
+from .graph import EvidenceGraph
+
+__all__ = [
+    "WatcherFirewall",
+    "AuditLedger",
+    "PetrusEngine",
+    "GovernanceGate",
+    "EvidenceGraph",
+]
