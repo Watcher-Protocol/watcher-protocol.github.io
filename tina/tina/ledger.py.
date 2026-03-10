@@ -1,0 +1,45 @@
+"""
+AuditLedger — Immutable evidence ledger with SHA-256 hashing
+D10 enforcement: source independence tracking
+TINA + Scrollfire PBC
+"""
+
+import hashlib
+import json
+from datetime import datetime
+
+
+class AuditLedger:
+    def __init__(self):
+        self.entries = []
+        self.chain_hash = "GENESIS"
+
+    def add_entry(self, claim: str, evidence: dict, score: float) -> str:
+        timestamp = datetime.utcnow().isoformat()
+        entry = {
+            "timestamp": timestamp,
+            "claim": claim,
+            "evidence": evidence,
+            "score": score,
+            "prev_hash": self.chain_hash,
+        }
+        entry_hash = hashlib.sha256(
+            json.dumps(entry, sort_keys=True).encode()
+        ).hexdigest()
+        entry["hash"] = entry_hash
+        self.entries.append(entry)
+        self.chain_hash = entry_hash
+        return entry_hash
+
+    def verify_chain(self) -> bool:
+        for i, entry in enumerate(self.entries):
+            expected_prev = "GENESIS" if i == 0 else self.entries[i - 1]["hash"]
+            if entry["prev_hash"] != expected_prev:
+                return False
+        return True
+
+    def get_entry(self, entry_hash: str) -> dict:
+        for entry in self.entries:
+            if entry["hash"] == entry_hash:
+                return entry
+        return None
