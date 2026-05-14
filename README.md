@@ -13,7 +13,7 @@ Like SSL for data integrity. Like DNS for name resolution. The Watcher Protocol 
 
 ## Status
 
-Phase 1 complete. Petrus Detection Engine operational. D1–D17 scoring dimensions implemented. SHA-256 evidence hashing live. Hard veto gates enforced.
+Phase 1 operational. Petrus Detection Engine operational. D1–D17 scoring dimensions implemented. SHA-256 evidence hashing live. Hard veto gates enforced.
 
 Phase 2 in progress: chain-aware anchor inheritance, hardened flood sub-gate.
 
