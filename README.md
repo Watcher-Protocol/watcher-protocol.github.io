@@ -26,3 +26,10 @@ J. Wayne LaRosa-Perkins, Principal Architect
 Newport, Oregon
 ```
 
+## Minimal Auditable Memory Demo
+
+A single-file reference demo is available at:
+
+`examples/minimal_auditable_memory_demo.py`
+
+It demonstrates how TINA + Scrollfire converts claims into auditable memory records using evidence scoring, governance gates, SHA-256 hashing, and tiered classification.
